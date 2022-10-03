@@ -1,24 +1,7 @@
-mod utils;
-
-use std::convert::TryInto;
 use std::ops::Add;
 use wasm_bindgen::prelude::*;
 use wasm_bindgen::Clamped;
-use web_sys::console::log;
 use web_sys::{CanvasRenderingContext2d, ImageData};
-
-// A macro to provide `println!(..)`-style syntax for `console.log` logging.
-macro_rules! log {
-    ( $( $t:tt )* ) => {
-        web_sys::console::log_1(&format!( $( $t )* ).into());
-    }
-}
-
-// When the `wee_alloc` feature is enabled, use `wee_alloc` as the global
-// allocator.
-//#[cfg(feature = "wee_alloc")]
-//#[global_allocator]
-//static ALLOC: wee_alloc::WeeAlloc = wee_alloc::WeeAlloc::INIT;
 
 #[derive(Clone, Copy)]
 struct Complex {
@@ -80,11 +63,6 @@ fn palette(c: u32) -> Pixel {
         blue: b as u8,
         alpha: 255,
     }
-    //vec![b as u8, g as u8, r as u8, 255]
-    //pixels.push(b as u8);
-    //pixels.push(g as u8);
-    //pixels.push(r as u8);
-    //pixels.push(255);
 }
 
 pub struct Plane {
@@ -95,9 +73,7 @@ pub struct Plane {
 }
 
 impl Plane {
-    fn new() -> Plane {
-        let width: u32 = 1000;
-        let height: u32 = 1000;
+    fn new(width: u32, height: u32) -> Plane {
         let set = MandelbrotSet {
             cxmin: -2.0,
             cxmax: 0.47,
@@ -105,7 +81,7 @@ impl Plane {
             cymax: 1.12,
             iterations: 1000,
         };
-        let pixels = Vec::with_capacity((width * height).try_into().unwrap());
+        let pixels = Vec::new();
         Plane {
             width,
             height,
@@ -140,20 +116,13 @@ impl Plane {
         }
         self.set.iterations
     }
-
-    //fn nbytes(&self) -> usize {
-    //    // each pixel is 4 bytes, RBGA
-    //    (self.width * self.height * 4).try_into().unwrap()
-    //}
 }
 
 #[wasm_bindgen]
-pub fn draw(ctx: &CanvasRenderingContext2d) -> Result<(), JsValue> {
-    let mut plane = Plane::new();
+pub fn draw(ctx: &CanvasRenderingContext2d, w: u32, h: u32) -> Result<(), JsValue> {
+    let mut plane = Plane::new(w, h);
     plane.calculate_set();
-    //let pixels = plane.pixels;
 
-    //let mut data_array: Vec<u8> = Vec::with_capacity(plane.nbytes());
     let mut data_array: Vec<u8> = Vec::new();
     plane.pixels.iter().for_each(|p| {
         data_array.push(p.red);

@@ -14,12 +14,15 @@ import { Plane, draw } from "mandelbrot";
 //const length = Math.sqrt(npixels);
 //console.log("pixels: ", npixels, "length: ", length);
 //
+const width = 1000;
+const height = 1000;
+
 const canvas = document.getElementById("canvas");
-canvas.width = 1000;
-canvas.height = 1000;
+canvas.width = width;
+canvas.height = height;
 
 const ctx = canvas.getContext("2d");
-draw(ctx);
+draw(ctx, width, height);
 
 //const image = new ImageData(dataArray, length, length);
 //ctx.putImageData(image, 0, 0);
