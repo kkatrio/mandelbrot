@@ -3,6 +3,9 @@ mod utils;
 use num_complex::Complex;
 use std::convert::TryInto;
 use wasm_bindgen::prelude::*;
+use wasm_bindgen::Clamped;
+use web_sys::console::log;
+use web_sys::{CanvasRenderingContext2d, ImageData};
 
 // A macro to provide `println!(..)`-style syntax for `console.log` logging.
 macro_rules! log {
@@ -121,4 +124,24 @@ impl Plane {
         }
         self.set.iterations
     }
+}
+
+#[wasm_bindgen]
+pub fn draw(ctx: &CanvasRenderingContext2d) -> Result<(), JsValue> {
+    let mut plane = Plane::new();
+    plane.calculate_set();
+    let width = plane.width;
+    let height = plane.height;
+    let pixels = plane.pixels;
+    let mut data_array: Vec<u8> = Vec::new();
+    pixels.iter().for_each(|p| {
+        data_array.push(p.red);
+        data_array.push(p.green);
+        data_array.push(p.blue);
+        data_array.push(p.alpha);
+    });
+
+    let image = ImageData::new_with_u8_clamped_array_and_sh(Clamped(&data_array), width, height)?;
+
+    ctx.put_image_data(&image, 0.0, 0.0)
 }
