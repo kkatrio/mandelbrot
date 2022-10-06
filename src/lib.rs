@@ -1,7 +1,13 @@
+mod palettes;
+mod utils;
+
+use crate::palettes::*;
 use std::ops::Add;
 use wasm_bindgen::prelude::*;
 use wasm_bindgen::Clamped;
 use web_sys::{CanvasRenderingContext2d, ImageData};
+
+const ITER: u32 = 1000;
 
 #[derive(Clone, Copy)]
 struct Complex {
@@ -52,19 +58,6 @@ pub struct Pixel {
     alpha: u8,
 }
 
-fn palette(c: u32) -> Pixel {
-    let normc = c as f64 / 1000.0;
-    let b = normc * 255.0;
-    let g = normc * 255.0;
-    let r = normc * 255.0;
-    Pixel {
-        red: r as u8,
-        green: g as u8,
-        blue: b as u8,
-        alpha: 255,
-    }
-}
-
 pub struct Plane {
     width: u32,
     height: u32,
@@ -75,11 +68,11 @@ pub struct Plane {
 impl Plane {
     fn new(width: u32, height: u32) -> Plane {
         let set = MandelbrotSet {
-            cxmin: -2.0,
+            cxmin: -1.5,
             cxmax: 0.47,
             cymin: -1.12,
             cymax: 1.12,
-            iterations: 1000,
+            iterations: ITER,
         };
         let pixels = Vec::new();
         Plane {
@@ -100,7 +93,7 @@ impl Plane {
 
                 let c = Complex::new(cx, cy);
                 let iters = self.compute_iterations(c);
-                let pixel = palette(iters);
+                let pixel = basic_palette(iters);
                 self.pixels.push(pixel);
             }
         }
