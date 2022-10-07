@@ -1,7 +1,8 @@
 mod palettes;
+#[macro_use]
 mod utils;
 
-use crate::palettes::*;
+use crate::palettes::{BasicColoring, HsvColoring, LchColoring, Palette, RgbNormalizedColoring};
 use std::ops::Add;
 use wasm_bindgen::prelude::*;
 use wasm_bindgen::Clamped;
@@ -83,7 +84,7 @@ impl Plane {
         }
     }
 
-    fn calculate_set(&mut self) {
+    fn calculate_set(&mut self, pal: &Box<dyn Palette>) {
         let dy = (self.set.cymax - self.set.cymin) / self.height as f64;
         for i in 0..self.height {
             let cy = self.set.cymin + i as f64 * dy;
@@ -93,7 +94,9 @@ impl Plane {
 
                 let c = Complex::new(cx, cy);
                 let iters = self.compute_iterations(c);
-                let pixel = basic_palette(iters);
+                let pixel = pal.color(iters);
+                // let pixel render<P>(iters);
+                //let pixel = basic_palette(iters);
                 self.pixels.push(pixel);
             }
         }
@@ -111,10 +114,25 @@ impl Plane {
     }
 }
 
+// TODO: use Rc and callbacks https://github.com/rustwasm/wasm-bindgen/blob/main/examples/paint/src/lib.rs
+// TODO: use wasm_bindgen(start)
 #[wasm_bindgen]
-pub fn draw(ctx: &CanvasRenderingContext2d, w: u32, h: u32) -> Result<(), JsValue> {
+pub fn draw(
+    ctx: &CanvasRenderingContext2d,
+    w: u32,
+    h: u32,
+    palette: Option<String>,
+) -> Result<(), JsValue> {
     let mut plane = Plane::new(w, h);
-    plane.calculate_set();
+
+    let palette: Box<dyn Palette> = match palette.unwrap().as_ref() {
+        "rgb" => Box::new(RgbNormalizedColoring),
+        "basic" => Box::new(BasicColoring),
+        "hsv" => Box::new(HsvColoring),
+        "lch" => Box::new(LchColoring),
+        _ => panic!("Unknown palette!"),
+    };
+    plane.calculate_set(&palette);
 
     let mut data_array: Vec<u8> = Vec::new();
     plane.pixels.iter().for_each(|p| {
