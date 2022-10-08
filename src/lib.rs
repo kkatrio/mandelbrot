@@ -4,11 +4,10 @@ mod utils;
 
 use crate::palettes::{BasicColoring, HsvColoring, LchColoring, Palette, RgbNormalizedColoring};
 use std::ops::Add;
+use utils::set_panic_hook;
 use wasm_bindgen::prelude::*;
 use wasm_bindgen::Clamped;
 use web_sys::{CanvasRenderingContext2d, ImageData};
-
-const ITER: u32 = 1000;
 
 #[derive(Clone, Copy)]
 struct Complex {
@@ -48,7 +47,7 @@ struct MandelbrotSet {
     cxmax: f64,
     cymin: f64,
     cymax: f64,
-    iterations: u32,
+    max_iters: u32,
 }
 
 #[allow(dead_code)]
@@ -67,13 +66,21 @@ pub struct Plane {
 }
 
 impl Plane {
-    fn new(width: u32, height: u32) -> Plane {
+    fn new(
+        width: u32,
+        height: u32,
+        xmin: f64,
+        xmax: f64,
+        ymin: f64,
+        ymax: f64,
+        max_iters: u32,
+    ) -> Plane {
         let set = MandelbrotSet {
-            cxmin: -1.5,
-            cxmax: 0.47,
-            cymin: -1.12,
-            cymax: 1.12,
-            iterations: ITER,
+            cxmin: xmin,
+            cxmax: xmax,
+            cymin: ymin,
+            cymax: ymax,
+            max_iters,
         };
         let pixels = Vec::new();
         Plane {
@@ -94,9 +101,7 @@ impl Plane {
 
                 let c = Complex::new(cx, cy);
                 let iters = self.compute_iterations(c);
-                let pixel = pal.color(iters);
-                // let pixel render<P>(iters);
-                //let pixel = basic_palette(iters);
+                let pixel = pal.color(iters, self.set.max_iters);
                 self.pixels.push(pixel);
             }
         }
@@ -104,13 +109,13 @@ impl Plane {
 
     fn compute_iterations(&self, c: Complex) -> u32 {
         let mut z = Complex::new(0.0, 0.0);
-        for i in 0..self.set.iterations {
+        for i in 0..self.set.max_iters {
             z = z.square() + c;
             if z.norm() > 2.0 {
                 return i;
             }
         }
-        self.set.iterations
+        self.set.max_iters
     }
 }
 
@@ -122,8 +127,14 @@ pub fn draw(
     w: u32,
     h: u32,
     palette: Option<String>,
+    xmin: f64,
+    xmax: f64,
+    ymin: f64,
+    ymax: f64,
+    iters: u32,
 ) -> Result<(), JsValue> {
-    let mut plane = Plane::new(w, h);
+    set_panic_hook();
+    let mut plane = Plane::new(w, h, xmin, xmax, ymin, ymax, iters);
 
     let palette: Box<dyn Palette> = match palette.unwrap().as_ref() {
         "rgb" => Box::new(RgbNormalizedColoring),

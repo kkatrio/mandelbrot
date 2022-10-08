@@ -5,11 +5,15 @@
     <title>Mandelbrot</title>
   </head>
   <body>
-    <canvas id="canvas"></canvas>
+    <canvas id="canvas" style="cursor: grab;"></canvas>
     <button style="position: absolute; top: 50px; margin: 20px;" id="basic">basic</button>
     <button style="position: absolute; top: 80px; margin: 20px;" id="rgb">back-white</button>
     <button style="position: absolute; top: 110px; margin: 20px;" id="hsv">hsv</button>
     <button style="position: absolute; top: 140px; margin: 20px;" id="lch">lch</button>
+    <button style="position: absolute; top: 180px; margin: 20px;" id="zoomin">zoom in</button>
+    <button style="position: absolute; top: 220px; margin: 20px;" id="zoomout">zoom out</button>
+    <label style="position: absolute; top: 270px; margin: 20px;" for="iterations">iterations</label>
+    <input style="position: absolute; top: 290px; margin: 20px;" type="range" min="10" max="1000" value="300" id="iterations">
 
     <!-- Note the usage of `type=module` here as this is an ES6 module -->
     <script type="module">
@@ -52,34 +56,112 @@
         await init();
 
         // And afterwards we can use all the functionality defined in wasm.
-        const width = 1000;
-        const height = 1000;
+
+        // pixels
+        const width = 800;
+        const height = 800;
+        // dimensions in complex plane
+        let xmin = -1.5;
+        let xmax = 0.47;
+        let ymin = -1.12;
+        let ymax = 1.12;
+        // palette
+        let palette = "basic"
+        // translation
+        let mousedown = false;
+        var cursor = {
+            xi: 0,
+            yi: 0,
+            xf: 0,
+            yf: 0,
+        };
+        let dx = (xmax - xmin) / width;
+        let dy = (ymax - ymin) / width;
 
         const canvas = document.getElementById("canvas");
         canvas.width = width;
         canvas.height = height;
-
         const ctx = canvas.getContext("2d");
-        //draw(ctx, width, height);
 
-        // interactive
+        // default iterations value
+        var iterations = document.getElementById("iterations");
+        let iters = iterations.value;
+
+        // draw on changed iterations
+        iterations.addEventListener("click", event => {
+            iters = iterations.value;
+            console.log("iters: ", iters);
+            draw(ctx, width, height, palette, xmin, xmax, ymin, ymax, iters);
+        });
+
+        // translate canvas
+        canvas.addEventListener("mousedown", (e) => {
+            canvas.style = "cursor: grabbing;";
+            cursor.xi = e.clientX;
+            cursor.yi = e.clientY;
+        });
+
+        canvas.addEventListener("mouseup", (e) => {
+            canvas.style = "cursor: grab;";
+            // translation
+            cursor.xf = e.clientX;
+            cursor.yf = e.clientY;
+            let px = cursor.xf - cursor.xi; // pixels
+            let py = cursor.yf - cursor.yi;
+            let dx = (xmax - xmin) / width; // distance per pixel
+            let dy = (ymax - ymin) / height;
+            xmin -= dx * px; // move boundaries
+            xmax -= dx * px;
+            ymin -= dy * py;
+            ymax -= dy * py;
+            draw(ctx, width, height, palette, xmin, xmax, ymin, ymax, iters);
+        });
+
+        // draw on new pallete
         const basicColor = document.getElementById("basic");
         basicColor.addEventListener("click", event => {
-            draw(ctx, width, height, "basic");
+            palette = "basic";
+            draw(ctx, width, height, palette, xmin, xmax, ymin, ymax, iters);
         });
         const hsvColor = document.getElementById("hsv");
         hsvColor.addEventListener("click", event => {
-            draw(ctx, width, height, "hsv");
+            palette = "hsv";
+            draw(ctx, width, height, palette, xmin, xmax, ymin, ymax, iters);
         });
         const lchColor = document.getElementById("lch");
         lchColor.addEventListener("click", event => {
-            draw(ctx, width, height, "lch");
+            palette = "lch";
+            draw(ctx, width, height, palette, xmin, xmax, ymin, ymax, iters);
         });
         const rgbColor = document.getElementById("rgb");
         rgbColor.addEventListener("click", event => {
-            draw(ctx, width, height, "rgb");
+            palette = "rgb";
+            draw(ctx, width, height, palette, xmin, xmax, ymin, ymax, iters);
         });
-        draw(ctx, width, height, "basic");
+
+        // on zoom
+        const zoomin = document.getElementById("zoomin");
+        zoomin.addEventListener("click", event => {
+            xmin += (xmax - xmin) * 0.1;
+            xmax -= (xmax - xmin) * 0.1;
+            ymin += (ymax - ymin) * 0.1;
+            ymax -= (ymax - ymin) * 0.1;
+            console.log("in xmin, xmax, ymin, ymax: ", xmin, xmax, ymin, ymax);
+            draw(ctx, width, height, palette, xmin, xmax, ymin, ymax, iters);
+        });
+
+        const zoomout = document.getElementById("zoomout");
+        zoomout.addEventListener("click", event => {
+            xmin -= (xmax - xmin) * 0.1;
+            xmax += (xmax - xmin) * 0.1;
+            ymin -= (ymax - ymin) * 0.1;
+            ymax += (ymax - ymin) * 0.1;
+            console.log("out xmin, xmax, ymin, ymax: ", xmin, xmax, ymin, ymax);
+            draw(ctx, width, height, palette, xmin, xmax, ymin, ymax, iters);
+        });
+
+        // on load
+        draw(ctx, width, height, palette, xmin, xmax, ymin, ymax, iters);
       }
 
       run();

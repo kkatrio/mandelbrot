@@ -2,21 +2,20 @@
 const PI: f64 = std::f64::consts::PI;
 
 use crate::Pixel;
-use crate::ITER;
 
 pub trait Palette {
-    fn color(&self, i: u32) -> Pixel;
+    fn color(&self, i: u32, n: u32) -> Pixel;
 }
 
 pub struct BasicColoring;
 
 impl Palette for BasicColoring {
-    fn color(&self, i: u32) -> Pixel {
-        // https://rosettacode.org/wiki/Mandelbrot_set(BASIC256)
+    fn color(&self, i: u32, n: u32) -> Pixel {
+        // https://rosettacode.org/wiki/Mandelbrot_set   (BASIC256)
         let mut r = 0;
         let mut g = 0;
         let mut b = 0;
-        if i < ITER {
+        if i < n {
             if i < 16 {
                 r = i * 8;
                 g = i * 8;
@@ -26,7 +25,7 @@ impl Palette for BasicColoring {
                 g = 128 + i - 16;
                 b = 192 + i - 16;
             } else if i >= 64 {
-                r = 319 - i;
+                r = n - i;
                 g = (128 + r) / 2;
                 b = r;
             }
@@ -43,9 +42,9 @@ impl Palette for BasicColoring {
 pub struct HsvColoring;
 
 impl Palette for HsvColoring {
-    fn color(&self, i: u32) -> Pixel {
+    fn color(&self, i: u32, n: u32) -> Pixel {
         // https://rosettacode.org/wiki/Mandelbrot_set(C)
-        let ratio = (i as f64 / ITER as f64).powf(1.5);
+        let ratio = (i as f64 / n as f64).powf(1.5);
         let offset = 1000.0; // TODO: parameterize offsets
         let offset2 = 2.0;
         let h: f64 = (offset * ratio) % 6.0;
@@ -97,9 +96,9 @@ impl Palette for HsvColoring {
 pub struct RgbNormalizedColoring;
 
 impl Palette for RgbNormalizedColoring {
-    fn color(&self, c: u32) -> Pixel {
+    fn color(&self, c: u32, n: u32) -> Pixel {
         // https://en.wikipedia.org/wiki/Plotting_algorithms_for_the_Mandelbrot_set#Exponentially_mapped_and_Cyclic_Iterations
-        let ratio = c as f64 / ITER as f64;
+        let ratio = c as f64 / n as f64;
         let normc = (ratio * 360.0).powf(1.5) % 360.0;
 
         let b = normc;
@@ -135,9 +134,9 @@ impl LchColoring {
 }
 
 impl Palette for LchColoring {
-    fn color(&self, i: u32) -> Pixel {
+    fn color(&self, i: u32, n: u32) -> Pixel {
         // https://en.wikipedia.org/wiki/Plotting_algorithms_for_the_Mandelbrot_set#LCH_Coloring
-        let ratio = i as f64 / ITER as f64;
+        let ratio = i as f64 / n as f64;
 
         let s = ratio;
         let v = 1.0 - (PI * s).powf(2.0);
